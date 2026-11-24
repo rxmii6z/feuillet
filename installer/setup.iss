@@ -58,6 +58,7 @@ english.DesktopIcon=Create a desktop shortcut
 english.Shortcuts=Shortcuts:
 english.AssocMd=Open .md and .markdown files with %1
 english.Association=File association:
+english.NewMenu=Add “Markdown document” to the File Explorer New menu (right-click)
 english.DocType=Markdown document
 english.SampleFile=example.md
 english.Launch=Launch %1
@@ -66,6 +67,7 @@ french.DesktopIcon=Créer une icône sur le Bureau
 french.Shortcuts=Raccourcis :
 french.AssocMd=Ouvrir les fichiers .md et .markdown avec %1
 french.Association=Association de fichiers :
+french.NewMenu=Ajouter « Document Markdown » au menu Nouveau de l'Explorateur (clic droit)
 french.DocType=Document Markdown
 french.SampleFile=exemple.md
 french.Launch=Lancer %1
@@ -74,6 +76,7 @@ french.WebView2Missing=Le composant Microsoft Edge WebView2 n'est pas installé 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:Shortcuts}"
 Name: "assocmd"; Description: "{cm:AssocMd,{#AppName}}"; GroupDescription: "{cm:Association}"
+Name: "newmenu"; Description: "{cm:NewMenu}"; GroupDescription: "{cm:Association}"
 
 [InstallDelete]
 ; Ancienne version (egui)
@@ -104,10 +107,16 @@ Root: HKA; Subkey: "Software\Classes\Applications\{#OldExe}"; Flags: deletekey d
 Root: HKA; Subkey: "Software\Classes\{#OldProgId}"; Flags: deletekey dontcreatekey
 Root: HKA; Subkey: "Software\Classes\.md\OpenWithProgids"; ValueType: none; ValueName: "{#OldProgId}"; Flags: deletevalue dontcreatekey
 Root: HKA; Subkey: "Software\Classes\.markdown\OpenWithProgids"; ValueType: none; ValueName: "{#OldProgId}"; Flags: deletevalue dontcreatekey
-; Type de fichier « Document Markdown » géré par Feuillet
-Root: HKA; Subkey: "Software\Classes\{#ProgId}"; ValueType: string; ValueName: ""; ValueData: "{cm:DocType}"; Flags: uninsdeletekey; Tasks: assocmd
-Root: HKA; Subkey: "Software\Classes\{#ProgId}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExe},0"; Tasks: assocmd
-Root: HKA; Subkey: "Software\Classes\{#ProgId}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""; Tasks: assocmd
+; Type de fichier « Document Markdown » géré par Feuillet. Le menu Nouveau en tire aussi son
+; nom et son icône : il est donc créé pour l'une ou l'autre des deux options.
+Root: HKA; Subkey: "Software\Classes\{#ProgId}"; ValueType: string; ValueName: ""; ValueData: "{cm:DocType}"; Flags: uninsdeletekey; Tasks: assocmd or newmenu
+Root: HKA; Subkey: "Software\Classes\{#ProgId}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExe},0"; Tasks: assocmd or newmenu
+Root: HKA; Subkey: "Software\Classes\{#ProgId}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""; Tasks: assocmd or newmenu
+; Clic droit → Nouveau → « Document Markdown » (fichier .md vide, avec l'icône de Feuillet).
+; Windows lit le nom et l'icône du type indiqué par la valeur par défaut de .md.
+Root: HKA; Subkey: "Software\Classes\.md"; ValueType: string; ValueName: ""; ValueData: "{#ProgId}"; Flags: uninsdeletevalue; Tasks: newmenu
+Root: HKA; Subkey: "Software\Classes\.md\ShellNew"; ValueType: string; ValueName: "NullFile"; ValueData: ""; Flags: uninsdeletekey; Tasks: newmenu
+Root: HKA; Subkey: "Software\Classes\.md\ShellNew"; Flags: deletekey dontcreatekey; Tasks: not newmenu
 Root: HKA; Subkey: "Software\Classes\.md\OpenWithProgids"; ValueType: string; ValueName: "{#ProgId}"; ValueData: ""; Flags: uninsdeletevalue; Tasks: assocmd
 Root: HKA; Subkey: "Software\Classes\.markdown\OpenWithProgids"; ValueType: string; ValueName: "{#ProgId}"; ValueData: ""; Flags: uninsdeletevalue; Tasks: assocmd
 Root: HKA; Subkey: "Software\Classes\.md"; ValueType: string; ValueName: ""; ValueData: "{#ProgId}"; Flags: uninsdeletevalue; Tasks: assocmd

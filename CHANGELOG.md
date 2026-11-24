@@ -16,6 +16,8 @@ free software under the GPL v3 license.
 - PDF export (A4, 20 mm margins) and printing
 - New logo
 - Bilingual installer (English / French)
+- File Explorer right-click → New → “Markdown document”, with the Feuillet icon; an empty
+  file opens directly in editing mode
 
 **Reliability**
 - UTF-8, UTF-16 and Windows-1252 encodings detected and preserved when saving

@@ -184,9 +184,13 @@ async function openPath(path, fragment = null, remember = true) {
     if (remember && doc?.path && doc.path !== file.path) pushHistory(doc.path);
     loadDocument({ path: file.path, text: file.content, saved: file.content, crlf: file.crlf, encoding: file.encoding, bom: file.bom, mtime: file.mtime });
     addRecent(file.path);
+    // Fichier vide (par exemple créé par clic droit → Nouveau) : rien à lire, on passe en écriture.
+    const empty = file.content.trim() === '';
+    if (empty && mode === 'read') setMode('split');
     await renderNow();
     if (fragment) scrollToAnchor(fragment);
     else el.previewPane.scrollTop = 0;
+    if (empty) editor?.focus();
   } catch (e) {
     notify(String(e), true);
     settings.recent = settings.recent.filter((p) => p !== path);

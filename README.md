@@ -62,6 +62,8 @@ display language by default; you can change it from the **⋯** menu → **Langu
 - Light / dark theme, zoom, recent files, drag and drop
 - English and French interface, following the Windows language
 - `.md` file association (double-click in File Explorer)
+- Right-click → **New** → **Markdown document** in File Explorer, with the Feuillet icon;
+  the empty file opens straight in editing mode
 
 **Reliability**
 - Encodings detected and preserved: UTF-8 (with or without BOM), UTF-16, Windows-1252;
@@ -75,7 +77,9 @@ display language by default; you can change it from the **⋯** menu → **Langu
 1. Download `Feuillet-v1.0-setup.exe` from the [Releases](../../releases) page.
 2. Run it. No administrator rights are needed. The installer is in English or French,
    depending on your Windows language.
-3. Check “Open .md and .markdown files with Feuillet” to open them with a double-click.
+3. Check “Open .md and .markdown files with Feuillet” to open them with a double-click,
+   and “Add Markdown document to the File Explorer New menu” to create one with a right-click
+   (both are on by default).
 
 **Requirements**: Windows 11 (or Windows 10 with the
 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/), already present
