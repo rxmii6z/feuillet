@@ -16,6 +16,10 @@
   <img alt="English and French" src="https://img.shields.io/badge/languages-English%20%7C%20Fran%C3%A7ais-lightgrey">
 </p>
 
+<p align="center">
+  <img src="docs/app.png" alt="Feuillet showing a Markdown document as an A4 page, with the outline on the left">
+</p>
+
 ---
 
 ## Overview
