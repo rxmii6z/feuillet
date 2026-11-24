@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feuillet</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style id="theme-markdown"></style>
+    <style id="theme-code"></style>
+  </head>
+  <body>
+    <!-- Les textes sont remplis dans la langue choisie (src/i18n.js) : data-i18n = texte,
+         data-i18n-title = infobulle, data-i18n-placeholder, data-i18n-aria = aria-label. -->
+
+    <!-- Barre de commandes, façon Windows 11 (Explorateur, Bloc-notes…) -->
+    <header id="commandbar">
+      <div class="group">
+        <button id="btn-new" class="cmd" data-i18n-title="new.title"><i>&#xE8A5;</i><span data-i18n="new"></span></button>
+        <button id="btn-open" class="cmd" data-i18n-title="open.title"><i>&#xE8E5;</i><span data-i18n="open"></span></button>
+        <div class="menu-wrap">
+          <button id="btn-recent" class="cmd" data-i18n-title="recent.title" aria-haspopup="menu"><i>&#xE823;</i><span data-i18n="recent"></span><i class="chev">&#xE70D;</i></button>
+          <div id="recent-menu" class="flyout" role="menu" hidden></div>
+        </div>
+        <button id="btn-save" class="cmd" data-i18n-title="save.title" disabled><i>&#xE74E;</i><span data-i18n="save"></span></button>
+        <span class="sep"></span>
+        <button id="btn-back" class="cmd icon" data-i18n-title="back.title" disabled><i>&#xE72B;</i></button>
+      </div>
+
+      <div class="segmented" id="modes" role="tablist" data-i18n-aria="modes.aria">
+        <button data-mode="read" role="tab" data-i18n-title="mode.read.title"><i>&#xE736;</i><span data-i18n="mode.read"></span></button>
+        <button data-mode="edit" role="tab" data-i18n-title="mode.edit.title"><i>&#xE70F;</i><span data-i18n="mode.edit"></span></button>
+        <button data-mode="split" role="tab" data-i18n-title="mode.split.title"><i>&#xE89A;</i><span data-i18n="mode.split"></span></button>
+      </div>
+
+      <div class="group right">
+        <button id="btn-pages" class="cmd toggle" data-i18n-title="pages.title"><i>&#xE7C3;</i><span>A4</span></button>
+        <button id="btn-toc" class="cmd icon toggle" data-i18n-title="toc.title"><i>&#xE8FD;</i></button>
+        <button id="btn-find" class="cmd icon toggle" data-i18n-title="find.title"><i>&#xE721;</i></button>
+        <button id="btn-theme" class="cmd icon"><i>&#xE706;</i></button>
+        <span class="sep"></span>
+        <button id="btn-zoom-out" class="cmd icon" data-i18n-title="zoomOut.title"><i>&#xE71F;</i></button>
+        <button id="btn-zoom-reset" class="cmd zoom-label" data-i18n-title="zoomReset.title">100 %</button>
+        <button id="btn-zoom-in" class="cmd icon" data-i18n-title="zoomIn.title"><i>&#xE8A3;</i></button>
+        <div class="menu-wrap">
+          <button id="btn-more" class="cmd icon" data-i18n-title="more.title" aria-haspopup="menu"><i>&#xE712;</i></button>
+          <div id="more-menu" class="flyout align-right" role="menu" hidden>
+            <button id="opt-autoreload" class="menu-item check" role="menuitemcheckbox"><i class="mark">&#xE73E;</i><span data-i18n="menu.autoreload"></span></button>
+            <button id="opt-hardbreaks" class="menu-item check" role="menuitemcheckbox" data-i18n-title="menu.hardbreaks.title"><i class="mark">&#xE73E;</i><span data-i18n="menu.hardbreaks"></span></button>
+            <button id="opt-reload" class="menu-item" role="menuitem"><i>&#xE72C;</i><span data-i18n="menu.reload"></span><kbd>F5</kbd></button>
+            <button id="opt-pdf" class="menu-item" role="menuitem"><i>&#xEA90;</i><span data-i18n="menu.pdf"></span><kbd data-i18n="kbd.pdf"></kbd></button>
+            <button id="opt-print" class="menu-item" role="menuitem"><i>&#xE749;</i><span data-i18n="menu.print"></span><kbd>Ctrl+P</kbd></button>
+            <div class="menu-sep"></div>
+            <button id="opt-saveas" class="menu-item" role="menuitem"><i>&#xE792;</i><span data-i18n="menu.saveas"></span><kbd data-i18n="kbd.saveas"></kbd></button>
+            <div class="menu-sep"></div>
+            <!-- Langue : le nom de chaque langue est écrit dans cette langue, pour qu'on la retrouve toujours. -->
+            <div class="menu-label" data-i18n="menu.language"></div>
+            <button class="menu-item check" role="menuitemradio" data-lang="auto"><i class="mark">&#xE73E;</i><span data-i18n="menu.lang.auto"></span></button>
+            <button class="menu-item check" role="menuitemradio" data-lang="fr" lang="fr"><i class="mark">&#xE73E;</i><span>Français</span></button>
+            <button class="menu-item check" role="menuitemradio" data-lang="en" lang="en"><i class="mark">&#xE73E;</i><span>English</span></button>
+            <div class="menu-sep"></div>
+            <div class="menu-about" data-i18n="about"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barre de mise en forme (mode édition) -->
+    <div id="formatbar" hidden>
+      <button data-fmt="bold" class="fmt" data-i18n-title="fmt.bold"><i>&#xE8DD;</i></button>
+      <button data-fmt="italic" class="fmt" data-i18n-title="fmt.italic"><i>&#xE8DB;</i></button>
+      <button data-fmt="strike" class="fmt txt" data-i18n-title="fmt.strike"><s>S</s></button>
+      <button data-fmt="code" class="fmt" data-i18n-title="fmt.code"><i>&#xE943;</i></button>
+      <span class="sep"></span>
+      <button data-fmt="h1" class="fmt txt" data-i18n-title="fmt.h1">H1</button>
+      <button data-fmt="h2" class="fmt txt" data-i18n-title="fmt.h2">H2</button>
+      <button data-fmt="h3" class="fmt txt" data-i18n-title="fmt.h3">H3</button>
+      <span class="sep"></span>
+      <button data-fmt="ul" class="fmt" data-i18n-title="fmt.ul"><i>&#xE8FD;</i></button>
+      <button data-fmt="ol" class="fmt txt" data-i18n-title="fmt.ol">1.</button>
+      <button data-fmt="task" class="fmt" data-i18n-title="fmt.task"><i>&#xE73A;</i></button>
+      <button data-fmt="quote" class="fmt txt quote" data-i18n-title="fmt.quote">“</button>
+      <span class="sep"></span>
+      <button data-fmt="link" class="fmt" data-i18n-title="fmt.link"><i>&#xE71B;</i></button>
+      <button data-fmt="image" class="fmt" data-i18n-title="fmt.image"><i>&#xEB9F;</i></button>
+      <button data-fmt="codeblock" class="fmt txt mono" data-i18n-title="fmt.codeblock">{ }</button>
+      <button data-fmt="table" class="fmt" data-i18n-title="fmt.table"><i>&#xE80A;</i></button>
+      <button data-fmt="hr" class="fmt txt" data-i18n-title="fmt.hr">―</button>
+    </div>
+
+    <!-- Recherche dans l'aperçu -->
+    <div id="findbar" hidden>
+      <i class="find-icon">&#xE721;</i>
+      <input id="find-input" type="text" data-i18n-placeholder="find.placeholder" spellcheck="false" autocomplete="off" />
+      <span id="find-count"></span>
+      <button id="find-prev" class="cmd icon" data-i18n-title="find.prev"><i>&#xE70E;</i></button>
+      <button id="find-next" class="cmd icon" data-i18n-title="find.next"><i>&#xE70D;</i></button>
+      <button id="find-close" class="cmd icon" data-i18n-title="find.close"><i>&#xE711;</i></button>
+    </div>
+
+    <main id="layout">
+      <nav id="toc" hidden>
+        <div class="toc-title" data-i18n="toc.heading"></div>
+        <div id="toc-list"></div>
+      </nav>
+      <section id="workspace" class="mode-read">
+        <div id="welcome">
+          <img src="/logo.png" alt="" class="logo" />
+          <h1>Feuillet</h1>
+          <p class="version" data-i18n="welcome.subtitle"></p>
+          <p class="hint" data-i18n="welcome.hint"></p>
+          <div class="welcome-actions">
+            <button id="welcome-open" class="button accent"><i>&#xE8E5;</i><span data-i18n="welcome.open"></span></button>
+            <button id="welcome-new" class="button"><i>&#xE8A5;</i><span data-i18n="welcome.new"></span></button>
+          </div>
+          <div id="welcome-recent"></div>
+          <p class="shortcuts" data-i18n="welcome.shortcuts"></p>
+        </div>
+        <div id="editor-pane" hidden><div id="editor"></div></div>
+        <div id="preview-pane" hidden>
+          <div class="sheet"><article id="preview" class="markdown-body"></article></div>
+        </div>
+      </section>
+    </main>
+
+    <footer id="statusbar">
+      <span id="st-path"></span>
+      <span id="st-dirty" data-i18n="status.dirty" hidden></span>
+      <span class="spacer"></span>
+      <span id="st-notice"></span>
+      <span id="st-page"></span>
+      <span id="st-cursor"></span>
+      <span id="st-stats"></span>
+    </footer>
+
+    <!-- Boîte de dialogue « Enregistrer les modifications ? » (style ContentDialog de Windows 11) -->
+    <div id="dialog-backdrop" hidden>
+      <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+        <div class="dialog-body">
+          <h2 id="dialog-title">Feuillet</h2>
+          <p id="dialog-text"></p>
+        </div>
+        <div class="dialog-buttons">
+          <button id="dlg-save" class="button accent" data-i18n="dlg.save"></button>
+          <button id="dlg-discard" class="button" data-i18n="dlg.discard"></button>
+          <button id="dlg-cancel" class="button" data-i18n="dlg.cancel"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="drop-overlay" hidden><div><i>&#xE8E5;</i><span data-i18n="drop"></span></div></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

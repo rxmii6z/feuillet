@@ -1,0 +1,654 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+   Feuillet — éditeur Markdown pour Windows 11. Copyright (C) 2026 les contributeurs de Feuillet. */
+
+/* Interface façon Windows 11 (Fluent 2) posée sur le fond Mica de la fenêtre.
+   Les couleurs reprennent les jetons de WinUI 3 : remplissages « subtle »,
+   cartes translucides, coins arrondis de 4 et 8 px, accent système. */
+
+:root {
+  --accent-base: #0067c0;
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-icons: "Segoe Fluent Icons", "Segoe MDL2 Assets";
+  --font-mono: "Cascadia Mono", Consolas, "Courier New", monospace;
+  --radius: 4px;
+  --radius-lg: 8px;
+  --reading-width: 980px;
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
+  --text: #1b1b1b;
+  --text-2: rgba(0, 0, 0, 0.62);
+  --text-3: rgba(0, 0, 0, 0.45);
+  --accent: var(--accent-base);
+  --on-accent: #fff;
+  --subtle-hover: rgba(0, 0, 0, 0.037);
+  --subtle-press: rgba(0, 0, 0, 0.024);
+  --subtle-selected: rgba(0, 0, 0, 0.055);
+  --control: rgba(255, 255, 255, 0.7);
+  --control-hover: rgba(249, 249, 249, 0.5);
+  --control-stroke: rgba(0, 0, 0, 0.0578);
+  --control-stroke-bottom: rgba(0, 0, 0, 0.1622);
+  --divider: rgba(0, 0, 0, 0.0803);
+  --bar: rgba(243, 243, 243, 0.35);
+  --sheet: rgba(255, 255, 255, 0.82);
+  --sheet-stroke: rgba(0, 0, 0, 0.06);
+  --editor-bg: rgba(255, 255, 255, 0.78);
+  --flyout: rgba(252, 252, 252, 0.97);
+  --flyout-stroke: rgba(0, 0, 0, 0.0578);
+  --shadow: 0 8px 16px rgba(0, 0, 0, 0.14);
+  --shadow-dialog: 0 32px 64px rgba(0, 0, 0, 0.19), 0 2px 21px rgba(0, 0, 0, 0.15);
+  --smoke: rgba(0, 0, 0, 0.3);
+  --find: rgba(255, 213, 0, 0.45);
+  --find-active: rgba(255, 140, 0, 0.75);
+}
+
+:root[data-theme="dark"] {
+  --text: #fff;
+  --text-2: rgba(255, 255, 255, 0.786);
+  --text-3: rgba(255, 255, 255, 0.55);
+  --accent: color-mix(in srgb, var(--accent-base) 55%, #fff);
+  --on-accent: #000;
+  --subtle-hover: rgba(255, 255, 255, 0.0605);
+  --subtle-press: rgba(255, 255, 255, 0.0419);
+  --subtle-selected: rgba(255, 255, 255, 0.0837);
+  --control: rgba(255, 255, 255, 0.0605);
+  --control-hover: rgba(255, 255, 255, 0.0837);
+  --control-stroke: rgba(255, 255, 255, 0.0698);
+  --control-stroke-bottom: rgba(255, 255, 255, 0.0465);
+  --divider: rgba(255, 255, 255, 0.0837);
+  --bar: rgba(32, 32, 32, 0.25);
+  --sheet: rgba(30, 30, 30, 0.72);
+  --sheet-stroke: rgba(255, 255, 255, 0.07);
+  --editor-bg: rgba(28, 28, 28, 0.72);
+  --flyout: rgba(44, 44, 44, 0.97);
+  --flyout-stroke: rgba(0, 0, 0, 0.2);
+  --shadow: 0 8px 16px rgba(0, 0, 0, 0.26);
+  --shadow-dialog: 0 32px 64px rgba(0, 0, 0, 0.37), 0 2px 21px rgba(0, 0, 0, 0.37);
+  --smoke: rgba(0, 0, 0, 0.3);
+  --find: rgba(255, 213, 0, 0.32);
+  --find-active: rgba(255, 140, 0, 0.7);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  /* Transparent : c'est le Mica de Windows qui sert de fond. */
+  background: transparent;
+  color: var(--text);
+  font: 14px/20px var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+i {
+  font-family: var(--font-icons);
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+[hidden] { display: none !important; }
+
+/* ---------- Barre de commandes ---------- */
+
+#commandbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bar);
+  border-bottom: 1px solid var(--divider);
+  flex-wrap: wrap;
+}
+
+.group { display: flex; align-items: center; gap: 2px; }
+.group.right { margin-left: auto; }
+
+.sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--divider);
+}
+
+.cmd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+.cmd.icon { width: 36px; padding: 0; justify-content: center; }
+.cmd .chev { font-size: 10px; margin-left: -2px; opacity: 0.8; }
+.cmd:hover:not(:disabled) { background: var(--subtle-hover); }
+.cmd:active:not(:disabled) { background: var(--subtle-press); color: var(--text-2); }
+.cmd:disabled { color: var(--text-3); }
+.cmd.toggle.on { background: var(--subtle-selected); color: var(--accent); }
+.zoom-label { min-width: 58px; justify-content: center; font-variant-numeric: tabular-nums; }
+
+/* Sélecteur de mode, façon « SelectorBar » de WinUI */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: 6px;
+  background: var(--control);
+  border: 1px solid var(--control-stroke);
+}
+.segmented button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  color: var(--text-2);
+}
+.segmented button:hover:not(:disabled) { background: var(--subtle-hover); color: var(--text); }
+.segmented button.active { background: var(--subtle-selected); color: var(--text); font-weight: 600; }
+.segmented button.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 16px;
+  height: 3px;
+  margin-left: -8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.segmented button:disabled { color: var(--text-3); }
+.segmented i { font-size: 14px; }
+
+/* ---------- Menus déroulants (flyouts) ---------- */
+
+.menu-wrap { position: relative; }
+.flyout {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  min-width: 260px;
+  max-width: 460px;
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  background: var(--flyout);
+  border: 1px solid var(--flyout-stroke);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(30px);
+  animation: flyout-in 0.16s cubic-bezier(0, 0, 0, 1);
+}
+.flyout.align-right { left: auto; right: 0; }
+@keyframes flyout-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  text-align: left;
+}
+.menu-item:hover { background: var(--subtle-hover); }
+.menu-item i { font-size: 16px; width: 16px; }
+.menu-item span { flex: 1; min-width: 0; }
+.menu-item small { display: block; color: var(--text-2); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item kbd { font: 12px var(--font-ui); color: var(--text-2); }
+.menu-item.check .mark { visibility: hidden; }
+.menu-item.check.on .mark { visibility: visible; }
+.menu-sep { height: 1px; margin: 4px 0; background: var(--divider); }
+.menu-about, .menu-empty { padding: 6px 12px; color: var(--text-2); font-size: 12px; }
+.menu-label { padding: 6px 12px 2px; color: var(--text-2); font-size: 12px; font-weight: 600; }
+
+/* ---------- Barre de mise en forme ---------- */
+
+#formatbar, #findbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 10px;
+  background: var(--bar);
+  border-bottom: 1px solid var(--divider);
+  flex-wrap: wrap;
+}
+.fmt {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fmt:hover { background: var(--subtle-hover); }
+.fmt:active { background: var(--subtle-press); color: var(--text-2); }
+.fmt.txt { font-weight: 600; font-size: 13px; }
+.fmt.mono { font-family: var(--font-mono); font-weight: 400; }
+.fmt.quote { font: 700 24px/1 Georgia, serif; padding-top: 10px; }
+.fmt span { margin-left: 6px; font-size: 13px; }
+
+/* ---------- Recherche ---------- */
+
+#findbar { gap: 4px; }
+.find-icon { color: var(--text-2); margin: 0 4px 0 2px; }
+#find-input {
+  width: 300px;
+  height: 32px;
+  padding: 0 10px;
+  font: inherit;
+  color: var(--text);
+  border-radius: var(--radius);
+  background: var(--control);
+  border: 1px solid var(--control-stroke);
+  border-bottom: 1px solid var(--control-stroke-bottom);
+  outline: none;
+}
+#find-input:focus { border-bottom: 2px solid var(--accent); }
+#find-count { min-width: 110px; padding: 0 8px; color: var(--text-2); font-size: 13px; }
+#find-count.none { color: #e0703c; }
+
+::highlight(find) { background-color: var(--find); }
+::highlight(find-active) { background-color: var(--find-active); color: #000; }
+
+/* ---------- Zone principale ---------- */
+
+#layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#toc {
+  width: 260px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 6px 12px 10px;
+  border-right: 1px solid var(--divider);
+  min-height: 0;
+}
+.toc-title { font-weight: 600; font-size: 14px; padding: 2px 10px 10px; }
+#toc-list { overflow-y: auto; flex: 1; padding-right: 4px; }
+.toc-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  text-align: left;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toc-item:hover { background: var(--subtle-hover); color: var(--text); }
+.toc-item.l1 { color: var(--text); font-weight: 600; }
+.toc-item.active { background: var(--subtle-selected); color: var(--text); }
+.toc-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.toc-empty { padding: 6px 10px; color: var(--text-2); }
+
+#workspace {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+#editor-pane, #preview-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+#workspace.mode-split #editor-pane { border-right: 1px solid var(--divider); }
+
+/* Aperçu : une feuille centrée, de largeur fixe, comme sur GitHub. */
+#preview-pane { position: relative; overflow-y: auto; padding: 20px 24px 48px; }
+.sheet {
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  background: var(--sheet);
+  border: 1px solid var(--sheet-stroke);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+.markdown-body {
+  padding: 40px 48px 48px;
+  background: transparent !important;
+  user-select: text;
+  min-height: 200px;
+}
+.markdown-body .empty-hint { color: var(--text-3); font-style: italic; }
+#workspace.mode-split #preview-pane { padding: 16px; }
+#workspace.mode-split .markdown-body { padding: 28px 32px 36px; }
+
+/* Blocs de code : bouton copier, façon GitHub */
+.markdown-body .code-wrap { position: relative; }
+.markdown-body .code-wrap .copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--flyout);
+  border: 1px solid var(--control-stroke);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.markdown-body .code-wrap:hover .copy, .markdown-body .code-wrap .copy:focus-visible { opacity: 1; }
+.markdown-body .code-wrap .copy i { font-size: 14px; }
+.markdown-body .code-wrap .copy.done { color: #3fb950; opacity: 1; }
+.markdown-body pre code.hljs { background: transparent; padding: 0; }
+.markdown-body li.task-list-item { list-style: none; }
+.markdown-body ul.contains-task-list { padding-left: 1.4em; }
+.markdown-body .task-list-item input { margin: 0 0.4em 0.2em -1.4em; vertical-align: middle; }
+.markdown-body img { background: transparent; }
+
+/* Éditeur */
+#editor-pane { display: flex; justify-content: center; background: var(--editor-bg); }
+#workspace.mode-edit #editor-pane { background: transparent; padding: 20px 24px 0; }
+/* Pas de « height: 100% » : étiré par le flex, il tient compte de la marge du haut
+   (sinon l'éditeur dépasse de 20 px sous la barre d'état). */
+#editor { flex: 1; min-width: 0; min-height: 0; }
+#editor .cm-editor { height: 100%; }
+#workspace.mode-edit #editor {
+  max-width: calc(var(--reading-width) + 80px);
+  background: var(--editor-bg);
+  border: 1px solid var(--sheet-stroke);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow: hidden;
+}
+
+/* ---------- Accueil ---------- */
+
+#welcome {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 9vh 24px 32px;
+  text-align: center;
+}
+#welcome .logo { width: 96px; height: 96px; }
+#welcome h1 { font: 600 28px/36px "Segoe UI Variable Display", var(--font-ui); margin: 14px 0 2px; }
+#welcome .version { margin: 0; color: var(--text-2); }
+#welcome .hint { margin: 18px 0 14px; color: var(--text-2); }
+.welcome-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+#welcome-recent { width: min(560px, 100%); margin-top: 32px; text-align: left; }
+#welcome-recent h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px 4px; }
+#welcome-recent .menu-item { background: var(--control); border: 1px solid var(--control-stroke); margin-bottom: 4px; padding: 8px 14px; }
+#welcome-recent .menu-item:hover { background: var(--control-hover); }
+#welcome .shortcuts { margin-top: 32px; color: var(--text-3); font-size: 12px; }
+
+/* Boutons standards (Button / AccentButton de WinUI) */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 34px;
+  min-width: 120px;
+  padding: 5px 16px 6px;
+  border-radius: var(--radius);
+  background: var(--control);
+  border: 1px solid var(--control-stroke);
+  border-bottom-color: var(--control-stroke-bottom);
+}
+.button:hover { background: var(--control-hover); }
+.button:active { color: var(--text-2); }
+.button.accent {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: rgba(0, 0, 0, 0.4);
+}
+.button.accent:hover { background: color-mix(in srgb, var(--accent) 90%, transparent); }
+.button.accent:active { background: color-mix(in srgb, var(--accent) 80%, transparent); }
+#welcome-actions .button i, .welcome-actions .button i { font-size: 16px; }
+
+/* ---------- Barre d'état ---------- */
+
+#statusbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 30px;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--bar);
+  border-top: 1px solid var(--divider);
+  white-space: nowrap;
+}
+#st-path { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#st-dirty { color: #e0a030; }
+#st-notice { color: #3fb950; transition: opacity 0.3s; }
+#st-notice.warn { color: #e0a030; }
+.spacer { flex: 1; }
+
+/* ---------- Boîte de dialogue ---------- */
+
+#dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--smoke);
+  animation: fade-in 0.15s;
+}
+@keyframes fade-in { from { opacity: 0; } }
+.dialog {
+  width: min(540px, calc(100vw - 32px));
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--flyout);
+  border: 1px solid var(--flyout-stroke);
+  box-shadow: var(--shadow-dialog);
+  animation: dialog-in 0.2s cubic-bezier(0, 0, 0, 1);
+}
+@keyframes dialog-in { from { opacity: 0; transform: scale(1.05); } }
+.dialog-body { padding: 24px; }
+.dialog-body h2 { margin: 0 0 12px; font: 600 20px/28px "Segoe UI Variable Display", var(--font-ui); }
+.dialog-body p { margin: 0; user-select: text; }
+.dialog-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--flyout) 70%, var(--text) 3%);
+  border-top: 1px solid var(--divider);
+}
+.dialog-buttons .button { min-width: 0; white-space: nowrap; }
+
+/* ---------- Glisser-déposer ---------- */
+
+#drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--smoke);
+  pointer-events: none;
+}
+#drop-overlay div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 40px;
+  border-radius: var(--radius-lg);
+  background: var(--flyout);
+  border: 2px dashed var(--accent);
+  font-size: 18px;
+  box-shadow: var(--shadow-dialog);
+}
+#drop-overlay i { font-size: 36px; color: var(--accent); }
+
+/* Barres de défilement fines (repli si les barres « overlay » de Windows ne sont pas actives) */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: var(--text-3); border-radius: 6px; border: 4px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { border-width: 3px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Mode pages A4 ---------- */
+
+:root[data-theme="light"] { --page: #ffffff; --page-shadow: 0 1px 3px rgba(0, 0, 0, 0.14), 0 4px 14px rgba(0, 0, 0, 0.06); }
+:root[data-theme="dark"] { --page: #232323; --page-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.25); }
+
+#preview-pane.paged { overflow-x: hidden; }
+.sheet.paged {
+  position: relative;
+  width: 210mm;
+  max-width: none;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  transform-origin: top left;
+}
+.sheet.paged .page-bg {
+  position: absolute;
+  left: 0;
+  width: 210mm;
+  height: 297mm;
+  background: var(--page);
+  box-shadow: var(--page-shadow);
+  border-radius: 2px;
+}
+/* Numéro de page, dans la marge du bas */
+.sheet.paged .page-bg::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 7mm;
+  right: 20mm;
+  font: 11px var(--font-ui);
+  color: var(--text-3);
+}
+.sheet.paged .markdown-body,
+#workspace.mode-split .sheet.paged .markdown-body {
+  position: relative;
+  box-sizing: border-box;
+  padding: 20mm;
+  min-height: 297mm;
+}
+.markdown-body .page-gap { margin: 0 !important; }
+.markdown-body > .page-first { margin-top: 0 !important; }
+.markdown-body .page-break { height: 0; }
+/* Ligne vide sautée dans le fichier : une ligne d'espace (sauf en fin de page). */
+.markdown-body .blank-line { height: 1.5em; margin: 0; }
+.markdown-body .blank-line.page-squeezed { height: 0; }
+/* Hors mode pages : un saut de page reste visible, discrètement. */
+.sheet:not(.paged) .markdown-body .page-break {
+  height: auto;
+  margin: 24px 0;
+  border-top: 1px dashed var(--text-3);
+}
+/* Mode édition seul : l'aperçu reste mis en page (invisible) pour placer les repères de page. */
+#workspace.mode-edit.paged #preview-pane {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ---------- Impression et export PDF : uniquement le document, en A4 ---------- */
+
+@page { size: A4; margin: 20mm; }
+
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    display: block !important;
+  }
+  body > :not(#layout), #toc, #workspace > :not(#preview-pane), .page-bg, .page-gap, .markdown-body .page-break,
+  .markdown-body .code-wrap .copy {
+    display: none !important;
+  }
+  #layout, #workspace, #preview-pane, #preview-pane[hidden] {
+    display: block !important;
+    position: static !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    z-index: auto !important;
+  }
+  .sheet, .sheet.paged {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    transform: none !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .markdown-body, .sheet.paged .markdown-body {
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+  .markdown-body > .page-first { break-before: page; }
+  .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+    break-after: avoid;
+  }
+  .markdown-body img, .markdown-body tr, .markdown-body blockquote, .markdown-body .markdown-alert { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Les résultats de recherche surlignés ne sont pas imprimés. */
+  ::highlight(find), ::highlight(find-active) { background-color: transparent; color: inherit; }
+}
+
+@media (max-width: 1000px) {
+  .cmd span, .segmented span { display: none; }
+  .cmd:not(.icon):not(.zoom-label) { padding: 0 9px; }
+}
