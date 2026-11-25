@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Compile Feuillet et son installateur sur les serveurs de GitHub, à partir du code public.
+#
+# - À chaque push sur main et chaque pull request : tests + compilation (installateur
+#   téléchargeable dans l'onglet Actions, rubrique « Artifacts »).
+# - À chaque tag vX.Y (ex. : git tag v1.1 ; git push origin v1.1) : idem, puis l'installateur
+#   est joint à une Release en brouillon, à relire et publier sur GitHub.
+#
+# Signature (SignPath Foundation) : désactivée tant que la variable de dépôt
+# SIGNPATH_ORGANIZATION_ID n'existe pas. Une fois le projet accepté par SignPath, créer dans
+# Settings → Secrets and variables → Actions :
+#   - variables : SIGNPATH_ORGANIZATION_ID, SIGNPATH_PROJECT_SLUG, SIGNPATH_POLICY_SLUG
+#   - secret    : SIGNPATH_API_TOKEN
+# L'installateur envoyé est alors signé (après approbation manuelle sur SignPath.io).
+
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      version: ${{ steps.version.outputs.short }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $full = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version   # ex. 1.0.0
+          $short = $full -replace '\.0$', ''                                               # ex. 1.0
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $tag = $env:GITHUB_REF_NAME -replace '^v', ''
+            if ($tag -ne $full -and $tag -ne $short) {
+              throw "Le tag v$tag ne correspond pas à la version $full de tauri.conf.json : mettez-la à jour (tauri.conf.json, Cargo.toml, package.json)."
+            }
+          }
+          "full=$full" >> $env:GITHUB_OUTPUT
+          "short=$short" >> $env:GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: Build Feuillet
+        run: npx tauri build --no-bundle
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=${{ steps.version.outputs.short }}" `
+            "/DFileVersion=${{ steps.version.outputs.full }}.0" `
+            installer\setup.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installer
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Feuillet-v${{ steps.version.outputs.short }}-setup
+          path: release/Feuillet-v${{ steps.version.outputs.short }}-setup.exe
+          if-no-files-found: error
+
+  # Signature par SignPath Foundation : seulement pour un tag, et une fois le projet accepté.
+  sign:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          github-artifact-id: ${{ needs.build.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Feuillet-v${{ needs.build.outputs.version }}-setup-signed
+          path: signed/*.exe
+          if-no-files-found: error
+
+  # Release en brouillon : installateur signé s'il existe, sinon celui du build.
+  release:
+    needs: [build, sign]
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' && needs.sign.result != 'failure' && needs.sign.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Feuillet-v${{ needs.build.outputs.version }}-setup${{ needs.sign.result == 'success' && '-signed' || '' }}
+          path: out
+
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" out/*.exe --clobber
+          else
+            gh release create "$TAG" out/*.exe --draft --title "Feuillet ${TAG#v}" --generate-notes
+          fi

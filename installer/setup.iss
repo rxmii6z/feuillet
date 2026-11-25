@@ -5,7 +5,14 @@
 ; Même AppId que la « Visionneuse Markdown » (ancien nom) : l'installation la remplace.
 
 #define AppName      "Feuillet"
-#define AppVersion   "1.0"
+; Version : ces valeurs par défaut servent en local ; GitHub Actions les fournit
+; (ISCC /DAppVersion=1.0 /DFileVersion=1.0.0.0) à partir de tauri.conf.json.
+#ifndef AppVersion
+  #define AppVersion "1.0"
+#endif
+#ifndef FileVersion
+  #define FileVersion "1.0.0.0"
+#endif
 #define AppExe       "Feuillet.exe"
 #define OldName      "Visionneuse Markdown"
 #define OldExe       "VisionneuseMarkdown.exe"
@@ -20,8 +27,9 @@ AppId={#AppId}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} v{#AppVersion}
-VersionInfoVersion=1.0.0.0
-VersionInfoProductVersion=1.0.0.0
+VersionInfoVersion={#FileVersion}
+VersionInfoProductVersion={#FileVersion}
+VersionInfoProductName={#AppName}
 VersionInfoDescription=Installateur {#AppName}
 DefaultDirName={autopf}\{#AppName}
 ; Pas de réinstallation dans le dossier de l'ancien nom.
@@ -89,7 +97,8 @@ Type: files; Name: "{autodesktop}\{#OldName}.lnk"
 [Files]
 Source: "..\src-tauri\target\release\feuillet.exe"; DestDir: "{app}"; DestName: "{#AppExe}"; Flags: ignoreversion
 ; Chargeur WebView2 : compilé avec la chaîne GNU, l'exe en a besoin à côté de lui.
-Source: "..\src-tauri\target\release\WebView2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion
+; Avec MSVC (GitHub Actions), il est intégré à l'exe et ce fichier n'existe pas.
+Source: "..\src-tauri\target\release\WebView2Loader.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 ; Document d'exemple dans la langue de l'installation

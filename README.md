@@ -90,7 +90,8 @@ display language by default; you can change it from the **⋯** menu → **Langu
 on most machines), 64-bit processor.
 
 > Windows SmartScreen may show a warning on first launch, because the installer is not
-> digitally signed. Click “More info”, then “Run anyway”.
+> digitally signed yet. Click “More info”, then “Run anyway”.
+> See the [code signing policy](#code-signing-policy).
 
 The installer automatically replaces the previous version, called “Visionneuse Markdown”,
 if it is installed.
@@ -199,6 +200,36 @@ by WebView2's print engine, which guarantees it matches the preview exactly.
    code in `readSettings()` in `src/main.js`.
 3. Translate the error messages in Rust (`tr!` macro in `src-tauri/src/main.rs`).
 4. Add the language to `installer/setup.iss` (`[Languages]` and `[CustomMessages]`).
+
+### Automated builds
+
+Every release is built by [GitHub Actions](.github/workflows/build.yml) on GitHub's servers,
+directly from the source code in this repository: tests, application, then installer. Builds of
+the `main` branch can be downloaded from the [Actions](../../actions) tab (“Artifacts”).
+
+To publish a version: update the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
+and `package.json`, then push a tag (`git tag v1.1`, `git push origin v1.1`). The installer is
+attached to a draft release, to review and publish.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/),
+certificate by [SignPath Foundation](https://signpath.org/).
+
+> The application to SignPath Foundation is in progress: current releases are not signed yet.
+
+Only installers built by the [automated build](.github/workflows/build.yml) from this
+repository are signed, and each signing request is approved manually.
+
+**Team roles**
+- Committers and reviewers: [rxmii6z](https://github.com/rxmii6z)
+- Approvers: [rxmii6z](https://github.com/rxmii6z)
+
+Changes from other contributors (pull requests) are reviewed by a committer before being merged.
+
+**Privacy**: this program will not transfer any information to other networked systems unless
+specifically requested by the user or the person installing or operating it. (Web links in a
+document open in your browser only when you click them.)
 
 ## Contributing
 
